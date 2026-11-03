@@ -1,5 +1,5 @@
 // 버전을 올리면 새 회차가 앱에 반영됩니다.
-const CACHE = "soc-exam-v17";
+const CACHE = "soc-exam-v18";
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE))); self.skipWaiting(); });
 self.addEventListener("activate", e => {
@@ -10,8 +10,8 @@ self.addEventListener("fetch", e => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (req.mode === "navigate" || url.origin === location.origin) {
-    // 앱 파일: 네트워크 우선(새 회차 반영), 오프라인이면 캐시
-    e.respondWith(fetch(req).then(res => { const cp = res.clone(); caches.open(CACHE).then(c => c.put(req, cp)); return res; })
+    // 앱 파일: 항상 서버에 최신본 확인(브라우저 캐시 무시), 오프라인이면 저장본
+    e.respondWith(fetch(req.url, { cache: "no-cache" }).then(res => { const cp = res.clone(); caches.open(CACHE).then(c => c.put(req, cp)); return res; })
       .catch(() => caches.match(req).then(r => r || caches.match("./index.html"))));
   } else if (url.hostname.includes("fonts.g")) {
     // 글꼴: 캐시 우선
