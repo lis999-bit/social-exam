@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1f4e79">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<title>사회 실전 모의고사 – 교육청 시설관리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f4ef; --paper:#fffdf8; --ink:#1f2328; --muted:#6b6f76; --line:#e2ddd2;
+  --accent:#1f4e79; --accent-soft:#e6eef6; --ok:#1d7a46; --ok-soft:#e5f3ea; --bad:#b4372f; --bad-soft:#fbe9e7;
+  --u1:#1f4e79; --u2:#9a5b13; --u3:#5a3d8a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans KR",system-ui,sans-serif;line-height:1.65;font-size:16px}
+.wrap{max-width:820px;margin:0 auto;padding:24px 18px 120px}
+header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-bottom:12px;margin-bottom:22px}
+.kicker{font-size:13px;color:var(--muted);letter-spacing:.04em}
+h1{font-family:"Noto Serif KR",serif;font-size:26px;margin:2px 0 0}
+select,button{font:inherit}
+select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
+.btn{border:0;border-radius:10px;padding:11px 18px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.btn:disabled{opacity:.5;cursor:default}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px}
+.intro h2{font-family:"Noto Serif KR",serif;margin:0 0 6px;font-size:22px}
+.units{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}
+.unit-chip{border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:14px;background:#fff}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.rules{color:var(--muted);font-size:14px;margin:0 0 18px;padding-left:18px}
+.hist{margin-top:18px;font-size:14px;color:var(--muted)}
+.hist b{color:var(--ink)}
+/* questions */
+.q{scroll-margin-top:12px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:20px 20px 14px;margin-bottom:14px}
+.q.correct{border-color:#bfe0cb}
+.q.wrong{border-color:#efc4bf}
+.qhead{display:flex;gap:10px;align-items:baseline}
+.qnum{font-weight:700;font-size:18px;min-width:30px;white-space:nowrap}
+.qmeta{font-size:12px;color:var(--muted);margin-left:auto;white-space:nowrap}
+.stem{margin:0;font-weight:500}
+.box{white-space:pre-line;border:1px solid var(--line);background:#fbfaf6;border-radius:10px;padding:12px 14px;margin:12px 0 4px;font-size:15px}
+.opts{list-style:none;padding:0;margin:12px 0 0}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:9px 10px;border-radius:9px;cursor:pointer;border:1px solid transparent}
+.opt:hover{background:#f3f0e8}
+.opt .n{font-size:18px;line-height:1.4;min-width:20px}
+.opt.sel{background:var(--accent-soft);border-color:#c5d6e8}
+.done .opt{cursor:default}
+.done .opt:hover{background:transparent}
+.opt.is-ans{background:var(--ok-soft);border-color:#bfe0cb}
+.opt.is-wrongpick{background:var(--bad-soft);border-color:#efc4bf}
+.mark{font-weight:700;font-size:13px;padding:2px 8px;border-radius:999px}
+.mark.o{background:var(--ok-soft);color:var(--ok)}
+.mark.x{background:var(--bad-soft);color:var(--bad)}
+details.exp{margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}
+details.exp summary{cursor:pointer;color:var(--accent);font-weight:500;font-size:14px}
+.exp ol{list-style:none;padding:0;margin:10px 0 0;font-size:14.5px}
+.exp li{padding:4px 0;display:flex;gap:8px}
+.exp li .tag{font-weight:700;min-width:20px}
+.exp li.ans{color:var(--ok)}
+/* bar */
+.bar{position:fixed;left:0;right:0;bottom:0;background:rgba(255,253,248,.97);border-top:1px solid var(--line);backdrop-filter:blur(6px)}
+.bar .in{max-width:820px;margin:0 auto;padding:10px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.timer{font-variant-numeric:tabular-nums;font-weight:700;font-size:20px}
+.timer.warn{color:var(--bad)}
+.omr{display:flex;flex-wrap:wrap;gap:4px;flex:1;min-width:200px}
+.omr a{width:24px;height:24px;border-radius:6px;border:1px solid var(--line);font-size:11px;display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--muted);background:#fff}
+.omr a.f{background:var(--accent);color:#fff;border-color:var(--accent)}
+.omr a.o{background:var(--ok);color:#fff;border-color:var(--ok)}
+.omr a.x{background:var(--bad);color:#fff;border-color:var(--bad)}
+/* result */
+.result{margin-bottom:18px}
+.score{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.score .big{font-family:"Noto Serif KR",serif;font-size:44px;font-weight:700}
+.score .sub{color:var(--muted)}
+.ubars{margin:16px 0 6px;display:grid;gap:10px}
+.ubar{display:grid;grid-template-columns:90px 1fr 56px;gap:10px;align-items:center;font-size:14px}
+.track{height:10px;background:#efebe2;border-radius:999px;overflow:hidden}
+.fill{height:100%;border-radius:999px}
+.tools{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center}
+.toggle{font-size:14px;display:flex;gap:6px;align-items:center;cursor:pointer}
+.hide,.hide-v{display:none!important}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(20,20,20,.35);display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}
+.modal .card{max-width:380px}
+.modal p{margin:0 0 16px}
+.row{display:flex;gap:10px;justify-content:flex-end}
+.tabs{display:flex;gap:6px;margin:-8px 0 20px}
+.tab{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:7px 14px;cursor:pointer;font-weight:500;font-size:14px;color:var(--muted)}
+.tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tab .cnt{display:inline-block;min-width:20px;padding:0 6px;margin-left:4px;border-radius:999px;background:var(--bad);color:#fff;font-size:12px}
+.nhead{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.nhead .sp{flex:1}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px;font-size:13px;cursor:pointer}
+.chip.on{background:var(--accent-soft);border-color:#c5d6e8;color:var(--accent);font-weight:700}
+.nstats{font-size:14px;color:var(--muted)}
+.nmeta{display:flex;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin:6px 0 0}
+.nmeta .pill{background:#f1ede4;border-radius:999px;padding:1px 9px}
+.nmeta .pill.hot{background:var(--bad-soft);color:var(--bad);font-weight:700}
+.q.mastered{opacity:.6}
+.nact{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
+.nact .btn{padding:7px 12px;font-size:13px}
+textarea.memo{width:100%;min-height:54px;margin-top:10px;border:1px solid var(--line);border-radius:9px;padding:8px 10px;font:inherit;font-size:14px;background:#fffef9;resize:vertical}
+.empty{text-align:center;color:var(--muted);padding:40px 10px}
+.saved{font-size:13px;color:var(--ok);margin-top:8px}
+.notice{font-size:13px;color:var(--muted);margin:0 0 12px}
+body{word-break:keep-all;overflow-wrap:anywhere;-webkit-text-size-adjust:100%}
+.bar .in{padding-bottom:max(10px, env(safe-area-inset-bottom))}
+.opt,.tab,.chip,.btn{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+@media (max-width:560px){
+  .wrap{padding:16px 12px 110px}
+  header.top{margin-bottom:16px}
+  .q{padding:16px 14px 12px;border-radius:12px}
+  .qhead{gap:6px}
+  .qnum{min-width:auto;font-size:17px}
+  .box{padding:10px 12px;font-size:14.5px}
+  .opt{padding:10px 8px;gap:8px}
+  .bar .in{padding:8px 12px;gap:10px;flex-wrap:nowrap;padding-bottom:max(8px, env(safe-area-inset-bottom))}
+  .timer{font-size:17px}
+  .omr{flex-wrap:nowrap;overflow-x:auto;min-width:0;scrollbar-width:none;padding:2px 0}
+  .omr::-webkit-scrollbar{display:none}
+  .omr a{flex:0 0 28px;height:28px}
+  .bar .btn{padding:9px 14px}
+  .card{padding:18px 16px}
+  .ubar{grid-template-columns:78px 1fr 44px}
+  .tools .btn{flex:1;white-space:nowrap}
+  .tools .toggle{flex-basis:100%}
+}
+@media (max-width:560px){.nmeta{margin-left:0}h1{font-size:22px}.qmeta{display:none}.score .big{font-size:36px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="kicker">교육청 시설관리 · 사회 25문항</div>
+      <h1>사회 실전 모의고사</h1>
+    </div>
+    <label>회차 <select id="roundSel"></select></label>
+  </header>
+  <nav class="tabs">
+    <button class="tab on" data-v="exam">모의고사</button>
+    <button class="tab" data-v="notes">오답노트 <span class="cnt hide" id="ncnt"></span></button>
+  </nav>
+
+  <section id="notes" class="hide"></section>
+  <section id="intro" class="card intro"></section>
+  <section id="result" class="card result hide"></section>
+  <section id="exam" class="hide"></section>
+</div>
+
+<div class="bar hide" id="bar"><div class="in">
+  <span class="timer" id="timer">25:00</span>
+  <div class="omr" id="omr"></div>
+  <button class="btn" id="submitBtn">제출</button>
+</div></div>
+
+<div class="modal hide" id="modal"><div class="card">
+  <p id="modalMsg"></p>
+  <div class="row"><button class="btn ghost" id="mCancel">계속 풀기</button><button class="btn" id="mOk">제출하기</button></div>
+</div></div>
+
+<script>
+const ROUNDS = [{"round": 1, "title": "실전 모의고사 1회", "questions": [{"unit": "정치와 법", "topic": "정치를 보는 관점", "stem": "다음은 정치를 보는 두 관점이다. 이에 대한 설명으로 옳은 것은?", "box": "갑: 정치란 국가 고유의 현상으로, 국가 권력의 획득·유지·행사와 관련된 활동이다.\n을: 정치란 국가뿐 아니라 모든 사회 집단에서 나타나는 이해관계 조정과 갈등 해결 활동이다.", "opts": ["을의 관점은 다원화된 현대 사회의 다양한 정치 현상을 설명하는 데 적합하다.", "을의 관점은 국가의 정치와 일반 사회 집단의 정치를 구분하는 데 유리하다.", "갑의 관점에 따르면 학급 회의에서 청소 당번 규칙을 정하는 것도 정치에 해당한다.", "갑은 정치를 넓은 의미로 이해한다."], "why": ["을은 넓은 의미의 정치(집단 현상설)로, 다원화된 현대 사회의 정치 현상 설명에 유리하다.", "국가와 일반 집단의 정치를 구분하는 데 유리한 것은 갑(국가 현상설)이다.", "학급 회의는 국가 권력과 무관하므로 을의 관점에서만 정치이다.", "갑은 국가 현상설, 즉 좁은 의미의 정치이다."], "ans": 0}, {"unit": "정치와 법", "topic": "사회 계약설", "stem": "다음은 사상가 A~C의 주장이다. 이에 대한 설명으로 옳은 것은? (단, A~C는 각각 홉스, 로크, 루소 중 하나이다.)", "box": "A: 자연 상태는 '만인의 만인에 대한 투쟁' 상태이므로, 개인은 자연권을 군주에게 전부 양도해야 한다.\nB: 자연 상태는 비교적 평화롭지만 자연권 보장이 불안정하므로, 자연권의 일부를 대표자에게 신탁해야 한다.\nC: 주권은 양도·대표될 수 없으며, 일반 의지에 따라 행사되어야 한다.", "opts": ["A~C는 모두 왕권신수설을 근거로 국가 권력의 정당성을 설명한다.", "A는 시민의 저항권을 적극적으로 인정한다.", "C는 대의 민주제를 가장 이상적인 정치 형태로 본다.", "B는 정부가 신탁을 위반하면 시민이 저항할 수 있다고 본다."], "why": ["세 사상가 모두 왕권신수설이 아닌 사회 계약으로 국가의 정당성을 설명한다.", "A(홉스)는 절대 군주에 대한 저항권을 인정하지 않았다.", "C(루소)는 주권이 대표될 수 없다고 보아 직접 민주제를 강조하였다.", "B는 로크로, 신탁 위반 시 저항권을 인정하였다."], "ans": 3}, {"unit": "정치와 법", "topic": "정부 형태", "stem": "갑국과 을국의 정부 형태에 대한 설명으로 옳은 것은? (단, 갑국과 을국은 각각 전형적인 대통령제와 의원 내각제 중 하나를 채택하고 있다.)", "box": "• 갑국: 행정부 수반은 의회를 해산할 수 있고, 의회는 내각을 불신임할 수 있다.\n• 을국: 행정부 수반은 국민이 직접 선출하며, 임기 동안 의회의 불신임을 받지 않는다.", "opts": ["갑국은 을국보다 입법부와 행정부 간 권력 분립이 엄격하다.", "갑국에서는 의회 의원이 내각의 각료를 겸직할 수 없다.", "을국의 행정부 수반은 의회가 의결한 법률안에 대해 거부권을 행사할 수 있다.", "을국에서는 내각이 의회에 대해 연대 책임을 진다."], "why": ["권력 분립이 엄격한 것은 대통령제인 을국이다.", "의원 내각제(갑국)는 의원의 각료 겸직이 일반적으로 허용된다.", "을국은 대통령제로, 대통령은 법률안 거부권으로 의회를 견제한다.", "내각의 대(對)의회 연대 책임은 의원 내각제(갑국)의 특징이다."], "ans": 2}, {"unit": "정치와 법", "topic": "국회와 대통령의 권한", "stem": "우리나라 국가 기관에 대한 설명으로 옳은 것은?", "box": null, "opts": ["정부는 국회에 법률안을 제출할 수 있다.", "국회는 재적 의원 과반수의 찬성으로 헌법 개정안을 의결한다.", "대법원장은 대법관 회의의 동의를 얻어 대통령이 임명한다.", "대통령은 국회의 동의 없이 국무총리를 임명할 수 있다."], "why": ["헌법상 국회의원과 정부는 법률안을 제출할 수 있다.", "헌법 개정안은 국회 재적 의원 3분의 2 이상의 찬성으로 의결한다.", "대법원장은 국회의 동의를 얻어 대통령이 임명한다. (대법관 회의 동의는 일반 법관 임명에서 대법원장이 받는 절차이다.)", "국무총리는 국회의 동의를 얻어 대통령이 임명한다."], "ans": 0}, {"unit": "정치와 법", "topic": "헌법 재판소", "stem": "우리나라 헌법 재판소의 권한에 해당하지 않는 것은?", "box": null, "opts": ["국가 기관 상호 간의 권한 쟁의 심판", "위헌 법률 심판", "정당 해산 심판", "명령·규칙이 헌법에 위반되는지 여부의 최종 심사"], "why": ["국가 기관·지방 자치 단체 간 권한 다툼을 심판하는 헌법 재판소의 권한이다.", "법원의 제청에 따라 법률의 위헌 여부를 심판하는 헌법 재판소의 권한이다.", "정부의 제소에 따라 위헌 정당의 해산 여부를 심판하는 헌법 재판소의 권한이다.", "명령·규칙·처분의 위헌·위법 여부가 재판의 전제가 된 경우 최종 심사권은 대법원에 있다. → 헌법 재판소 권한이 아님(정답)."], "ans": 3}, {"unit": "정치와 법", "topic": "미성년자의 법률 행위", "stem": "만 17세인 갑은 법정 대리인의 동의 없이 휴대 전화 판매점 을과 고가의 휴대 전화 구매 계약을 체결하였다. 이에 대한 설명으로 옳은 것은? (단, 갑이 처분을 허락받은 재산 범위 내의 행위가 아니며, 다른 조건은 고려하지 않는다.)", "box": null, "opts": ["갑은 법정 대리인의 동의 없이 단독으로 계약을 취소할 수 있다.", "갑이 속임수로 을에게 자신을 성년자로 믿게 하였더라도 계약을 취소할 수 있다.", "갑과 을의 계약은 체결 시점부터 무효이다.", "을은 계약 당시 갑이 미성년자임을 알았더라도 의사 표시를 철회할 수 있다."], "why": ["미성년자가 동의 없이 한 법률 행위는 미성년자 본인 또는 법정 대리인이 취소할 수 있다.", "미성년자가 속임수로 성년자로 믿게 한 경우에는 취소할 수 없다.", "무효가 아니라 취소할 수 있는 행위로, 취소 전까지는 유효하다.", "상대방의 철회권은 계약 당시 미성년자임을 몰랐을 때(선의)에만 인정된다."], "ans": 0}, {"unit": "정치와 법", "topic": "특수 불법 행위 – 사용자 책임", "stem": "갑 회사의 직원 을은 업무 수행 중 과실로 병에게 손해를 입혔다. 이에 대한 설명으로 옳은 것은? (단, 다른 조건은 고려하지 않는다.)", "box": null, "opts": ["갑 회사는 을의 선임 및 사무 감독에 상당한 주의를 다하였음을 증명하면 배상 책임을 면할 수 있다.", "병은 갑 회사에게만 손해 배상을 청구할 수 있다.", "갑 회사가 병에게 손해를 배상한 경우 을에게 구상권을 행사할 수 없다.", "을은 사용자 책임이 인정되면 병에 대해 손해 배상 책임을 지지 않는다."], "why": ["사용자 책임은 중간 책임으로, 선임·감독상 주의 의무를 다했음을 증명하면 면책된다.", "병은 갑 회사와 을 중 누구에게든 손해 배상을 청구할 수 있다.", "사용자가 배상하면 피용자(을)에게 구상권을 행사할 수 있다.", "을은 일반 불법 행위 책임을 지며, 사용자 책임과 함께 병립한다."], "ans": 0}, {"unit": "정치와 법", "topic": "범죄의 성립 요건", "stem": "범죄의 성립 요건에 대한 설명으로 옳은 것은?", "box": null, "opts": ["심신 미약자의 행위는 책임이 조각되어 처벌되지 않는다.", "만 13세인 자의 행위는 구성 요건 해당성이 없어 범죄가 성립하지 않는다.", "정당방위에 해당하는 행위는 위법성이 조각되어 범죄가 성립하지 않는다.", "긴급 피난은 책임 조각 사유에 해당한다."], "why": ["심신 미약자는 형을 감경할 수 있을 뿐, 책임이 조각되는 것은 심신 상실자이다.", "만 14세 미만의 형사 미성년자는 '책임'이 조각되는 것이지, 구성 요건 해당성이 없는 것이 아니다.", "정당방위·긴급피난·정당행위 등은 위법성 조각 사유이다.", "긴급 피난은 위법성 조각 사유이다."], "ans": 2}, {"unit": "정치와 법", "topic": "형사 절차와 인권 보호", "stem": "형사 절차에서의 인권 보호 제도에 대한 설명으로 옳은 것은?", "box": null, "opts": ["무죄 판결을 받은 피고인은 구금 여부와 관계없이 형사 보상을 청구할 수 있다.", "국민 참여 재판에서 배심원의 평결은 판사를 구속한다.", "보석 제도는 기소 전 피의자 단계에서 청구할 수 있다.", "구속된 피의자는 법원에 구속의 적법성 여부에 대한 심사를 청구할 수 있다."], "why": ["형사 보상은 구금되었던 자가 무죄 판결 등을 받은 경우에 청구할 수 있다.", "배심원의 평결은 권고적 효력만 있어 판사를 구속하지 않는다.", "보석은 기소된 피고인에게 인정되는 제도이다.", "구속 적부 심사 제도는 수사 단계의 피의자가 청구한다."], "ans": 3}, {"unit": "경제", "topic": "기회비용과 합리적 선택", "stem": "갑은 여가 시간에 A~C 중 하나만 선택할 수 있다. 각 활동의 편익과 명시적 비용이 표와 같을 때, 이에 대한 설명으로 옳은 것은? (단, 제시된 것 외의 비용은 없다.)", "box": "활동 │ 편익 │ 명시적 비용\nA │ 50만 원 │ 20만 원\nB │ 40만 원 │ 10만 원\nC │ 35만 원 │ 0원", "opts": ["A를 선택하는 것이 합리적이다.", "B를 선택할 경우 기회비용은 40만 원이다.", "C를 선택할 경우 암묵적 비용은 30만 원이다.", "A를 선택할 경우 순편익은 양(+)의 값이다."], "why": ["명시적 비용만 뺀 순편익은 A 30, B 30, C 35이므로 C가 합리적 선택이다.", "B의 기회비용 = 명시적 비용 10 + 암묵적 비용 35(C) = 45만 원.", "C의 암묵적 비용 = 포기한 대안 중 최대 순편익 = max(A 30, B 30) = 30만 원.", "A의 기회비용 = 20 + 35 = 55만 원, 순편익 = 50 − 55 = −5만 원(음수)."], "ans": 2}, {"unit": "경제", "topic": "수요와 공급의 변동", "stem": "X재 시장에서 다음과 같은 변화가 동시에 나타났을 때, 이에 대한 분석으로 옳은 것은? (단, X재는 수요 법칙과 공급 법칙을 따른다.)", "box": "• X재와 대체 관계에 있는 Y재의 가격이 상승하였다.\n• X재 생산 기술이 크게 향상되었다.", "opts": ["X재의 수요 곡선은 왼쪽으로 이동한다.", "X재의 공급 곡선은 왼쪽으로 이동한다.", "X재의 균형 가격은 반드시 상승한다.", "X재의 균형 거래량은 반드시 증가한다."], "why": ["대체재 가격이 오르면 X재 수요가 증가해 수요 곡선은 오른쪽으로 이동한다.", "생산 기술 향상은 공급 증가 요인으로 공급 곡선은 오른쪽으로 이동한다.", "수요 증가는 가격 상승, 공급 증가는 가격 하락 요인이므로 가격 변화는 알 수 없다.", "대체재 가격 상승 → X재 수요 증가, 기술 향상 → X재 공급 증가. 둘 다 거래량을 늘린다."], "ans": 3}, {"unit": "경제", "topic": "정부의 가격 규제 – 최저 임금제", "stem": "노동 시장에서 정부가 최저 임금제를 실시하였을 때, 이에 대한 설명으로 옳은 것은?", "box": null, "opts": ["최저 임금이 균형 임금보다 낮게 설정되면 실업이 증가한다.", "최저 임금이 균형 임금보다 높게 설정되면 노동의 초과 공급이 발생한다.", "최저 임금제는 최고 가격제의 대표적인 사례이다.", "최저 임금제는 노동 수요자를 보호하기 위한 제도이다."], "why": ["균형보다 낮은 최저 임금은 시장에 아무 영향을 주지 못한다.", "균형보다 높은 가격 하한 → 노동 공급량 > 수요량, 즉 초과 공급(비자발적 실업).", "최저 임금제는 최저 가격제(가격 하한제)의 사례이다.", "최저 임금제는 노동 공급자(근로자)를 보호하기 위한 제도이다."], "ans": 1}, {"unit": "경제", "topic": "수요의 가격 탄력성", "stem": "수요의 가격 탄력성에 대한 설명으로 옳은 것은?", "box": null, "opts": ["생활 필수품일수록 수요의 가격 탄력성이 크다.", "대체재가 많은 재화일수록 수요의 가격 탄력성이 작다.", "수요가 가격에 대해 비탄력적인 재화는 가격이 하락하면 판매 수입이 감소한다.", "수요가 가격에 대해 탄력적인 재화는 가격이 상승하면 판매 수입이 증가한다."], "why": ["생활 필수품은 대체로 수요가 비탄력적이다.", "대체재가 많을수록 쉽게 바꿀 수 있으므로 탄력성이 크다.", "비탄력적이면 가격 하락률 > 수요량 증가율이므로 판매 수입이 감소한다(풍년의 역설).", "탄력적이면 가격 상승 시 수요량이 더 크게 줄어 판매 수입이 감소한다."], "ans": 2}, {"unit": "경제", "topic": "시장 실패 – 외부 효과", "stem": "다음 사례에 대한 분석으로 옳은 것은?", "box": "양봉업자 갑이 벌을 기르자, 인근 과수원의 꽃가루받이가 활발해져 과일 수확량이 크게 늘었다. 그러나 갑은 과수원 주인으로부터 아무런 대가를 받지 않았다.", "opts": ["양봉 활동은 사회적 최적 수준보다 적게 이루어진다.", "공공재의 비배제성 때문에 발생한 문제이다.", "정부는 양봉업자에게 세금을 부과하여 문제를 해결할 수 있다.", "부정적 외부 효과가 나타난 사례이다."], "why": ["생산의 긍정적 외부 효과 → 사회적 편익 > 사적 편익 → 과소 생산.", "공공재 문제가 아니라 외부 효과에 의한 시장 실패이다.", "과소 생산을 늘리려면 세금이 아니라 보조금을 지급해야 한다.", "제3자(과수원)에게 의도치 않은 이익을 준 긍정적 외부 효과이다."], "ans": 0}, {"unit": "경제", "topic": "국내 총생산(GDP)", "stem": "올해 우리나라의 국내 총생산(GDP)에 포함되는 것은?", "box": null, "opts": ["주식을 사고팔아 얻은 시세 차익", "우리나라 공장에서 일하는 외국인 근로자가 올해 받은 임금", "주부가 가족을 위해 한 가사 노동의 가치", "작년에 생산된 중고 자동차를 올해 거래한 대금"], "why": ["주식 매매 차익은 새로운 생산 활동이 아니므로 포함되지 않는다.", "GDP는 국적과 관계없이 국내에서 생산된 가치이므로 포함된다.", "시장에서 거래되지 않는 가사 노동은 GDP에 포함되지 않는다.", "중고품은 과거 생산분이므로 올해 GDP에 포함되지 않는다. (중개 수수료만 포함)"], "ans": 1}, {"unit": "경제", "topic": "인플레이션", "stem": "예상하지 못한 인플레이션이 발생했을 때 나타날 수 있는 현상으로 옳은 것은?", "box": null, "opts": ["국내 물가 상승으로 수출이 증가한다.", "부동산 등 실물 자산 보유자가 화폐 자산 보유자보다 불리해진다.", "돈을 빌려준 채권자가 채무자보다 유리해진다.", "고정된 연금으로 생활하는 사람들의 실질 소득이 감소한다."], "why": ["국산품 가격이 오르므로 수출은 감소하는 경향이 있다.", "실물 자산 가치는 물가와 함께 오르므로 실물 자산 보유자가 유리하다.", "화폐 가치 하락으로 채무자가 유리하고 채권자가 불리해진다.", "명목 소득이 고정되어 있으므로 물가 상승만큼 실질 소득이 줄어든다."], "ans": 3}, {"unit": "경제", "topic": "환율 변동", "stem": "원/달러 환율이 1,300원에서 1,450원으로 상승했을 때의 영향으로 옳은 것은? (단, 다른 조건은 일정하다.)", "box": null, "opts": ["우리나라 수출품의 달러 표시 가격이 하락하여 수출이 증가하는 요인이 된다.", "달러화 부채가 있는 우리나라 기업의 상환 부담이 감소한다.", "미국을 여행하는 우리나라 관광객의 경비 부담이 줄어든다.", "달러화 대비 원화의 가치가 상승한다."], "why": ["원화 가치 하락 → 같은 원화 가격의 상품이 달러로는 더 싸져 수출에 유리하다.", "갚아야 할 원화 금액이 늘어나 상환 부담이 증가한다.", "1달러를 사는 데 더 많은 원화가 필요하므로 여행 경비 부담이 커진다.", "환율 상승은 원화 가치 하락(평가 절하)을 뜻한다."], "ans": 0}, {"unit": "사회·문화", "topic": "사회·문화 현상의 특징", "stem": "자연 현상과 구분되는 사회·문화 현상의 특징으로 옳은 것은?", "box": null, "opts": ["인간의 의지와 관계없이 발생한다.", "원인과 결과의 관계가 필연적으로 나타난다.", "시대와 장소를 초월하여 보편성만 나타난다.", "인간의 가치가 개입되어 나타나는 가치 함축적 현상이다."], "why": ["인간의 의지와 관계없이 발생하는 것은 자연 현상의 특징이다.", "사회·문화 현상은 확률의 원리가 적용되며, 필연적 인과 관계는 자연 현상의 특징이다.", "보편성과 함께 시대·장소에 따른 특수성도 나타난다.", "사회·문화 현상은 인간의 의지와 가치가 개입된다."], "ans": 3}, {"unit": "사회·문화", "topic": "기능론과 갈등론", "stem": "교육에 대한 갑, 을의 관점을 비교한 설명으로 옳은 것은?", "box": "갑: 교육은 사회 구성원에게 공통의 가치를 전달하여 사회 통합에 기여하고, 능력에 따라 인재를 적재적소에 배치한다.\n을: 교육은 지배 집단의 가치를 정당화하며, 기존의 불평등한 계층 구조를 재생산한다.", "opts": ["을은 사회 구성원 간 합의된 가치를 강조한다.", "갑은 사회 구성 요소들이 상호 의존적으로 기능한다고 본다.", "을은 사회 변동을 비정상적인 현상으로 본다.", "갑은 갈등론의 관점에 해당한다."], "why": ["합의된 가치를 강조하는 것은 기능론(갑)이다.", "갑은 기능론으로, 사회를 상호 의존적인 부분들의 유기체로 본다.", "사회 변동을 일시적 불균형·비정상으로 보는 것은 기능론이다. 갈등론은 변동을 보편적 현상으로 본다.", "갑은 기능론, 을이 갈등론이다."], "ans": 1}, {"unit": "사회·문화", "topic": "양적 연구와 질적 연구", "stem": "다음 연구 A, B에 대한 설명으로 옳은 것은?", "box": "A: '스마트폰 사용 시간이 길수록 수면 시간이 짧을 것이다.'라는 가설을 세우고, 고등학생 1,000명에게 질문지를 배포하여 통계적으로 분석하였다.\nB: 한 청소년 쉼터에서 6개월간 생활하며 청소년들이 스마트폰 사용에 부여하는 의미를 해석하였다.", "opts": ["B는 연구자의 주관 개입을 배제하기에 A보다 유리하다.", "A는 객관적으로 측정 가능한 자료를 중시한다.", "A는 질적 연구 방법에 해당한다.", "B는 연구 결과를 일반화하기에 A보다 유리하다."], "why": ["참여 관찰을 활용한 B는 연구자의 주관이 개입될 가능성이 크다.", "A는 양적 연구로, 계량화된 자료와 통계 분석을 활용한다.", "가설 검증과 통계 분석을 하는 A는 양적 연구이다.", "소수 사례를 심층 분석하는 B(질적 연구)는 일반화가 어렵다."], "ans": 1}, {"unit": "사회·문화", "topic": "자료 수집 방법 – 실험법", "stem": "다음 연구에 대한 설명으로 옳은 것은?", "box": "연구자는 학습 앱 사용이 수학 성적에 미치는 영향을 알아보기 위해 학생들을 무작위로 두 집단으로 나누었다. 집단 Ⅰ은 8주 동안 학습 앱을 사용하게 하고, 집단 Ⅱ는 사용하지 않게 한 뒤, 두 집단의 수학 성적 변화를 비교하였다.", "opts": ["변수 간 인과 관계를 파악하는 데 유리하지만, 연구 대상에 대한 윤리적 문제가 발생할 수 있다.", "학습 앱 사용 여부는 종속 변수이다.", "집단 Ⅰ은 통제 집단이다.", "문자를 해독하지 못하는 사람에게는 적용하기 어려운 방법이다."], "why": ["실험법은 인과 관계 검증에 유리하나, 인간을 대상으로 처치를 가하므로 윤리 문제가 생길 수 있다.", "학습 앱 사용 여부는 원인이 되는 독립 변수, 수학 성적이 종속 변수이다.", "처치(앱 사용)를 받은 집단 Ⅰ은 실험 집단이다.", "문맹자에게 적용이 어려운 것은 질문지법의 단점이다."], "ans": 0}, {"unit": "사회·문화", "topic": "사회 집단의 유형", "stem": "다음 글에 나타난 사회 집단에 대한 설명으로 옳은 것은?", "box": "갑은 아침마다 ㉠가족과 식사를 한 뒤 ㉡회사로 출근한다. 퇴근 후에는 자신이 소속되기를 동경하는 ㉢프로 e스포츠 팀의 경기를 보며 그 선수들의 행동과 태도를 본받으려 노력한다.", "opts": ["㉢은 갑의 내집단이다.", "㉡은 2차 집단에 해당한다.", "㉡은 구성원의 본질 의지에 따라 결합한 공동 사회이다.", "㉠은 이익 사회에 해당한다."], "why": ["갑은 ㉢에 소속되어 있지 않으며, 행동과 판단의 기준으로 삼는 준거 집단이다.", "회사는 특정 목적 달성을 위해 형식적·수단적으로 접촉하는 2차 집단이다.", "회사는 선택 의지에 따라 결합한 이익 사회이다.", "가족은 본질 의지에 따라 결합한 공동 사회이다."], "ans": 1}, {"unit": "사회·문화", "topic": "관료제와 탈관료제", "stem": "관료제와 탈관료제에 대한 설명으로 옳은 것은?", "box": null, "opts": ["관료제는 환경 변화에 유연하고 신속하게 대응하는 데 유리하다.", "탈관료제는 연공서열에 따른 보상 체계를 강조한다.", "관료제에서는 규칙과 절차를 지나치게 중시하여 목적 전치 현상이 나타날 수 있다.", "탈관료제는 엄격한 위계 서열을 통해 업무 효율성을 높인다."], "why": ["유연·신속한 대응에 유리한 것은 탈관료제(팀제·네트워크 조직 등)이다.", "탈관료제는 성과·능력 중심의 보상을 강조한다.", "규칙 준수 자체가 목적이 되는 목적 전치는 관료제의 대표적 문제점이다.", "엄격한 위계 서열은 관료제의 특징이며, 탈관료제는 수평적 구조를 지향한다."], "ans": 2}, {"unit": "사회·문화", "topic": "사회 이동", "stem": "다음 사례에 나타난 사회 이동에 대한 설명으로 옳은 것은?", "box": "농업에 종사하던 갑의 아버지와 달리, 갑은 급속한 산업화로 제조업과 서비스업 일자리가 크게 늘어나면서 대기업 관리직이 되었다.", "opts": ["세대 내 이동에 해당한다.", "폐쇄적 계층 구조에서 주로 나타나는 이동 유형이다.", "사회 구조의 변화에 따라 나타난 구조적 이동의 사례이다.", "개인의 노력만으로 이루어진 개인적 이동의 사례이다."], "why": ["아버지와 갑의 지위를 비교하므로 세대 간 이동이다.", "계층 간 이동이 활발한 개방적 계층 구조에서 주로 나타난다.", "산업화라는 사회 구조 변화로 나타난 이동이므로 구조적 이동이다.", "사례의 핵심은 산업 구조의 변화이므로 구조적 이동으로 보아야 한다."], "ans": 2}, {"unit": "사회·문화", "topic": "문화 변동의 양상", "stem": "다음 사례에 나타난 문화 변동의 양상으로 옳은 것은?", "box": "A국에 B국의 음식이 전해진 뒤, A국의 전통 양념과 B국의 조리법이 결합하여 두 나라 어디에도 없던 새로운 요리가 만들어졌고, 이 요리는 A국의 대표 음식으로 자리 잡았다.", "opts": ["문화 동화", "문화 융합", "문화 병존", "문화 지체"], "why": ["문화 동화는 한 문화가 다른 문화에 흡수되어 고유성을 잃는 것이다.", "두 문화 요소가 결합하여 제3의 새로운 문화가 나타났으므로 문화 융합이다.", "문화 병존은 고유문화와 외래문화가 각각의 정체성을 유지하며 함께 존재하는 것이다.", "문화 지체는 물질문화의 변동 속도를 비물질문화가 따라가지 못하는 현상이다."], "ans": 1}]}];
+const CIRC = ["①","②","③","④"];
+const UNIT_COLOR = {"정치와 법":"var(--u1)","경제":"var(--u2)","사회·문화":"var(--u3)"};
+const LIMIT = 25*60;
+let cur = 0, picks = [], started = 0, tick = null, submitted = false, onlyWrong = false, practice = false, checked = [], savedRun = new Set();
+
+const $ = s => document.querySelector(s);
+const store = {
+  get(k){ try{ return JSON.parse(localStorage.getItem(k)||"null"); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+/* ───── 오답노트 저장소: db(영구) 우선, 안 되면 이 브라우저에 저장 ───── */
+const NB = { mode:"local", status:"loading", db:null, items:{} };
+const today = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+function nbLocalLoad(){ NB.items = store.get("socexam-wrong") || {}; }
+function nbLocalSave(){ store.set("socexam-wrong", NB.items); }
+async function nbInit(){
+  nbLocalLoad(); nbChanged();
+  let db = null;
+  try{ if(typeof claude !== "undefined" && claude.use) db = await claude.use("db"); }catch(e){ db = null; }
+  if(!db){ NB.status = "local"; nbChanged(); return; }
+  NB.db = db; NB.mode = "db";
+  const t = setTimeout(()=>{ NB.status = "slow"; nbChanged(); }, 10000);
+  db.collection("wrong").onSnapshot(snap=>{
+    if(!snap.metadata.fromCache){ clearTimeout(t); NB.status = "ok"; }
+    const it = {}; snap.docs.forEach(d=>{ it[d.id] = d.data(); }); NB.items = it; nbChanged();
+  }, err=>{
+    clearTimeout(t); NB.db = null; NB.mode = "local"; NB.status = "local"; nbLocalLoad(); nbChanged();
+  });
+}
+async function nbPut(key, obj){
+  NB.items = {...NB.items, [key]: obj};
+  if(NB.mode === "db" && NB.db){
+    try{ await NB.db.doc("wrong/"+key).set(obj); }
+    catch(e){
+      if(e && e.code === "quota_exceeded"){ NB.status = "full"; }
+      else { NB.mode = "local"; NB.status = "local"; nbLocalSave(); }
+    }
+  } else nbLocalSave();
+  nbChanged();
+}
+async function nbAttempt(rec){
+  if(NB.mode === "db" && NB.db){ try{ await NB.db.collection("attempts").add(rec); }catch(e){} }
+}
+function nbChanged(){
+  const open = Object.values(NB.items).filter(x=>!x.mastered).length;
+  const c = $("#ncnt"); if(c){ c.textContent = open; c.classList.toggle("hide", !open); }
+  if(view === "notes") renderNotes();
+}
+
+/* ───── 화면 전환 ───── */
+let view = "exam", nUnit = "전체", hideMastered = true, coverAns = false, revealed = new Set();
+function setView(v){
+  view = v;
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on", b.dataset.v===v));
+  const ex = v === "exam";
+  $("#notes").classList.toggle("hide", ex);
+  ["#intro","#result","#exam","#bar"].forEach(s=>$(s).classList.toggle("hide-v", !ex));
+  try{ history.replaceState(null, "", ex ? location.pathname + location.search : "#notes"); }catch(e){}
+  if(!ex) renderNotes();
+  window.scrollTo(0,0);
+}
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>setView(b.dataset.v));
+window.addEventListener("hashchange", ()=>setView(location.hash==="#notes"?"notes":"exam"));
+
+function renderNotes(){
+  const all = Object.entries(NB.items).map(([k,v])=>({key:k, ...v}));
+  const list = all
+    .filter(x => nUnit==="전체" || x.unit===nUnit)
+    .filter(x => !(hideMastered && x.mastered))
+    .sort((a,b)=> (b.wrongCount||0)-(a.wrongCount||0) || String(b.lastWrong).localeCompare(String(a.lastWrong)) || a.round-b.round || a.qno-b.qno);
+  const open = all.filter(x=>!x.mastered).length, done = all.length - open;
+  const units = ["전체","정치와 법","경제","사회·문화"];
+  const note = NB.status==="local" ? "이 브라우저에만 저장되고 있어요. 다른 기기나 브라우저에서는 보이지 않을 수 있어요."
+    : NB.status==="slow" ? "저장소에 연결하는 중이에요. 표시된 내용이 최신이 아닐 수 있어요."
+    : NB.status==="full" ? "저장 공간이 가득 차 새 오답을 저장하지 못했어요. 복습 완료한 문항을 정리해 주세요." : "";
+  $("#notes").innerHTML = `
+    <div class="nhead">
+      <div class="filters">${units.map(u=>`<button class="chip ${u===nUnit?"on":""}" data-u="${u}">${u}</button>`).join("")}</div>
+      <span class="sp"></span>
+      <span class="nstats">복습할 문항 <b>${open}</b> · 복습 완료 ${done}</span>
+    </div>
+    <div class="nhead">
+      <label class="toggle"><input type="checkbox" id="hideM" ${hideMastered?"checked":""}> 복습 완료 숨기기</label>
+      <label class="toggle"><input type="checkbox" id="coverA" ${coverAns?"checked":""}> 정답 가리고 다시 풀기</label>
+    </div>
+    ${note?`<p class="notice">${note}</p>`:""}
+    ${list.length ? list.map(noteCard).join("") : `<div class="card empty">${all.length? "조건에 맞는 오답이 없어요." : "아직 저장된 오답이 없어요.<br>모의고사를 풀고 제출하면 틀린 문항이 여기에 자동으로 모여요."}</div>`}
+  `;
+  document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{ nUnit=b.dataset.u; renderNotes(); });
+  $("#hideM").onchange = e => { hideMastered = e.target.checked; renderNotes(); };
+  $("#coverA").onchange = e => { coverAns = e.target.checked; revealed = new Set(); renderNotes(); };
+  document.querySelectorAll("[data-master]").forEach(b=>b.onclick=async()=>{
+    const k=b.dataset.master, x={...NB.items[k]}; x.mastered=!x.mastered; x.masteredAt = x.mastered?today():null; await nbPut(k,x);
+  });
+  document.querySelectorAll("textarea.memo").forEach(t=>t.onchange=async()=>{
+    const k=t.dataset.k, x={...NB.items[k]}; if((x.memo||"")===t.value) return; x.memo=t.value; await nbPut(k,x);
+  });
+  document.querySelectorAll("#notes .opt").forEach(el=>el.onclick=()=>{
+    const k=el.dataset.k; if(!coverAns || revealed.has(k)) return;
+    revealed.add(k); _tries[k] = +el.dataset.o; renderNotes();
+  });
+  document.querySelectorAll("[data-reveal]").forEach(b=>b.onclick=()=>{ revealed.add(b.dataset.reveal); renderNotes(); });
+}
+const _tries = {};
+function noteCard(x){
+  const hidden = coverAns && !revealed.has(x.key);
+  const tryPick = _tries[x.key];
+  return `<article class="q ${x.mastered?"mastered":""} ${hidden?"":"done"}">
+    <div class="qhead"><span class="qnum" style="min-width:auto">${x.round}회 ${x.qno}번</span>
+      <span class="qmeta" style="margin-left:auto"><span class="dot" style="background:${UNIT_COLOR[x.unit]}"></span>${x.unit} · ${esc(x.topic)}</span></div>
+    <div class="nmeta">
+      <span class="pill ${x.wrongCount>1?"hot":""}">틀린 횟수 ${x.wrongCount||1}</span>
+      <span class="pill">최근 오답 ${esc(x.lastWrong||"")}</span>
+      ${x.lastRight?`<span class="pill">최근 정답 ${esc(x.lastRight)}</span>`:""}
+      ${x.mastered?`<span class="pill">복습 완료</span>`:""}
+    </div>
+    <p class="stem" style="margin-top:10px">${esc(x.stem)}</p>
+    ${x.box?`<div class="box">${esc(x.box)}</div>`:""}
+    <ul class="opts">${x.opts.map((o,j)=>{
+      let c="";
+      if(!hidden){ if(j===x.ans) c="is-ans"; else if(j===x.myPick) c="is-wrongpick"; }
+      return `<li class="opt ${c}" data-k="${x.key}" data-o="${j}"><span class="n">${CIRC[j]}</span><span>${esc(o)}${!hidden&&j===x.myPick&&j!==x.ans?' <span class="mark x">내가 고른 답</span>':""}</span></li>`;
+    }).join("")}</ul>
+    ${!hidden && tryPick!=null ? `<p class="saved" style="color:${tryPick===x.ans?"var(--ok)":"var(--bad)"}">다시 푼 답 ${CIRC[tryPick]} → ${tryPick===x.ans?"정답이에요!":"또 틀렸어요. 해설을 꼭 확인하세요."}</p>`:""}
+    ${hidden?`<div class="nact"><span class="nstats">답을 골라 보거나</span><button class="btn ghost" data-reveal="${x.key}">정답·해설 보기</button></div>`:`
+    <details class="exp" open><summary>정답 ${CIRC[x.ans]}${x.myPick!=null&&x.myPick>=0?` · 내 답 ${CIRC[x.myPick]}`:" · 미응답"} — 선지별 해설</summary>
+      <ol>${x.why.map((w,j)=>`<li class="${j===x.ans?"ans":""}"><span class="tag">${CIRC[j]}</span><span>${j===x.ans?"(O) ":"(X) "}${esc(w)}</span></li>`).join("")}</ol>
+    </details>`}
+    <textarea class="memo" data-k="${x.key}" placeholder="나의 메모 — 왜 틀렸는지, 헷갈린 개념을 적어 두세요">${esc(x.memo||"")}</textarea>
+    <div class="nact"><button class="btn ${x.mastered?"ghost":""}" data-master="${x.key}">${x.mastered?"다시 복습 목록으로":"복습 완료"}</button></div>
+  </article>`;
+}
+
+async function saveOne(r, i){
+  const q = r.questions[i], key = `r${r.round}-q${i+1}`, ex = NB.items[key];
+  const pick = picks[i]==null ? -1 : picks[i];
+  if(pick === q.ans) return false;
+  const base = ex ? {...ex} : {round:r.round, qno:i+1, title:r.title, unit:q.unit, topic:q.topic, stem:q.stem, box:q.box, opts:q.opts, why:q.why, ans:q.ans, wrongCount:0, firstWrong:today(), memo:""};
+  base.myPick = pick; base.wrongCount = (base.wrongCount||0)+1; base.lastWrong = today(); base.mastered = false; base.masteredAt = null;
+  savedRun.add(i);
+  await nbPut(key, base);
+  return true;
+}
+async function markRight(r, i){
+  const key = `r${r.round}-q${i+1}`, ex = NB.items[key];
+  if(picks[i] === r.questions[i].ans && ex && ex.lastRight !== today()) await nbPut(key, {...ex, lastRight: today()});
+}
+async function saveWrongs(r, onlyUnsaved){
+  let n = 0;
+  for(let i=0;i<r.questions.length;i++){
+    if(picks[i] === r.questions[i].ans){ await markRight(r, i); continue; }
+    if(onlyUnsaved && savedRun.has(i)) continue;
+    if(await saveOne(r, i)) n++;
+  }
+  return n;
+}
+function wrongList(r){ return r.questions.map((q,i)=>picks[i]===q.ans?null:i+1).filter(Boolean); }
+
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function fmt(sec){ const m=Math.floor(Math.abs(sec)/60), s=Math.abs(sec)%60; return (sec<0?"-":"")+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0"); }
+
+function unitCounts(r){
+  const c = {}; r.questions.forEach(q=>c[q.unit]=(c[q.unit]||0)+1); return c;
+}
+
+function renderSel(){
+  $("#roundSel").innerHTML = ROUNDS.map((r,i)=>`<option value="${i}">${r.round}회</option>`).join("");
+  $("#roundSel").value = cur;
+  $("#roundSel").onchange = e => { cur = +e.target.value; reset(); };
+}
+
+function renderIntro(){
+  const r = ROUNDS[cur], uc = unitCounts(r);
+  const h = store.get("socexam-hist-"+r.round) || [];
+  $("#intro").innerHTML = `
+    <h2>${esc(r.title)}</h2>
+    <div class="units">${Object.entries(uc).map(([u,n])=>`<span class="unit-chip"><span class="dot" style="background:${UNIT_COLOR[u]}"></span>${u} ${n}문항</span>`).join("")}</div>
+    <ul class="rules">
+      <li>4지선다 25문항, 문항당 4점(100점 만점)</li>
+      <li>권장 시간 25분 (실제 시험은 2과목 50문항 50분, 문항당 약 1분)</li>
+      <li>시간이 지나도 계속 풀 수 있고, 초과 시간이 빨간색으로 표시돼요.</li>
+      <li><b>실전 모드</b>: 다 풀고 제출하면 한꺼번에 채점해요.</li>
+      <li><b>연습 모드</b>: 보기를 고르고 <b>제출하고 채점하기</b>를 누르면 그 문제의 정답과 해설이 바로 나와요. 틀린 문제는 <b>오답노트에 저장</b> 버튼으로 골라서 저장해요.</li>
+      <li>실전 모드는 제출할 때 틀린 문항이 오답노트에 자동 저장돼요.</li>
+    </ul>
+    <div class="tools" style="margin-top:0">
+      <button class="btn" id="startBtn">실전 모드로 시작</button>
+      <button class="btn ghost" id="practiceBtn">연습 모드 (바로 채점)</button>
+    </div>
+    ${h.length?`<div class="hist">이 브라우저에 남은 기록: ${h.slice(-5).map(x=>`<b>${x.score}점</b> (${x.date}, ${fmt(x.time)})`).join(" · ")}</div>`:""}
+  `;
+  $("#startBtn").onclick = () => start(false);
+  $("#practiceBtn").onclick = () => start(true);
+}
+
+function renderExam(){
+  const r = ROUNDS[cur];
+  $("#exam").innerHTML = r.questions.map((q,i)=>{
+    const done = submitted || (practice && checked[i]), ok = done && picks[i]===q.ans;
+    const pendingCheck = practice && !submitted && !checked[i];
+    const cls = done ? (ok?"correct":"wrong") : "";
+    if (submitted && onlyWrong && ok) return "";
+    return `<article class="q ${cls} ${done?"done":""}" id="q${i+1}">
+      <div class="qhead"><span class="qnum">${i+1}.</span>
+        <p class="stem">${esc(q.stem)}</p>
+        <span class="qmeta"><span class="dot" style="background:${UNIT_COLOR[q.unit]}"></span>${q.unit} · ${esc(q.topic)}</span>
+      </div>
+      ${q.box?`<div class="box">${esc(q.box)}</div>`:""}
+      <ul class="opts">${q.opts.map((o,j)=>{
+        let c = "";
+        if(!done && picks[i]===j) c="sel";
+        if(done && j===q.ans) c="is-ans";
+        if(done && picks[i]===j && j!==q.ans) c="is-wrongpick";
+        return `<li class="opt ${c}" data-q="${i}" data-o="${j}"><span class="n">${CIRC[j]}</span><span>${esc(o)}</span></li>`;
+      }).join("")}</ul>
+      ${pendingCheck?`<div class="nact"><button class="btn" data-check="${i}" ${picks[i]==null?"disabled":""}>제출하고 채점하기</button>${picks[i]==null?'<span class="nstats">보기를 먼저 골라 주세요</span>':""}</div>`:""}
+      ${practice && done && !ok ? `<div class="nact">${savedRun.has(i)?'<span class="saved" style="margin:0">✓ 오답노트에 저장했어요</span> <a href="#notes" style="font-size:13px">오답노트 보기</a>':`<button class="btn ghost" data-save="${i}">오답노트에 저장</button>`}</div>`:""}
+      ${done?`<details class="exp" ${ok&&!(practice&&!submitted)?"":"open"}>
+        <summary>${ok?'<span class="mark o">정답</span>':'<span class="mark x">오답</span>'} &nbsp;정답 ${CIRC[q.ans]}${picks[i]!=null&&!ok?` · 내 답 ${CIRC[picks[i]]}`:(picks[i]==null?" · 미응답":"")} — 해설 보기</summary>
+        <ol>${q.why.map((w,j)=>`<li class="${j===q.ans?"ans":""}"><span class="tag">${CIRC[j]}</span><span>${j===q.ans?"(O) ":"(X) "}${esc(w)}</span></li>`).join("")}</ol>
+      </details>`:""}
+    </article>`;
+  }).join("");
+  if(!submitted){
+    document.querySelectorAll("#exam .opt").forEach(el=>el.onclick=()=>{
+      const qi=+el.dataset.q, oi=+el.dataset.o;
+      if(practice && checked[qi]) return;
+      picks[qi] = picks[qi]===oi ? null : oi;
+      renderExam(); renderOmr();
+    });
+    document.querySelectorAll("[data-check]").forEach(b=>b.onclick=()=>{
+      const i=+b.dataset.check; if(picks[i]==null) return;
+      checked[i] = true; renderExam(); renderOmr();
+      markRight(ROUNDS[cur], i);
+    });
+  }
+  document.querySelectorAll("[data-save]").forEach(b=>b.onclick=async()=>{
+    b.disabled = true; b.textContent = "저장 중…";
+    await saveOne(ROUNDS[cur], +b.dataset.save); renderExam();
+    if(submitted) updUnsaved();
+  });
+}
+
+function renderOmr(){
+  const r = ROUNDS[cur];
+  $("#omr").innerHTML = r.questions.map((q,i)=>{
+    let c = "";
+    if(submitted || (practice && checked[i])) c = picks[i]===q.ans ? "o" : "x";
+    else if(picks[i]!=null) c = "f";
+    return `<a href="javascript:void 0" data-go="${i+1}" class="${c}">${i+1}</a>`;
+  }).join("");
+  document.querySelectorAll("#omr a").forEach(a=>a.onclick=e=>{ e.preventDefault(); const el=document.getElementById("q"+a.dataset.go); el && el.scrollIntoView({behavior:"smooth", block:"start"}); });
+  if(practice && !submitted){
+    const n = checked.filter(Boolean).length, c = picks.filter((p,i)=>checked[i] && p===r.questions[i].ans).length;
+    $("#submitBtn").textContent = n===r.questions.length ? "결과 보기" : `결과 ${c}/${n}`;
+  } else $("#submitBtn").textContent = "제출";
+}
+
+function start(mode){
+  practice = !!mode; savedRun = new Set();
+  checked = Array(ROUNDS[cur].questions.length).fill(false);
+  picks = Array(ROUNDS[cur].questions.length).fill(null);
+  submitted = false; onlyWrong = false; started = Date.now();
+  $("#intro").classList.add("hide"); $("#result").classList.add("hide");
+  $("#exam").classList.remove("hide"); $("#bar").classList.remove("hide");
+  $("#submitBtn").classList.remove("hide");
+  renderExam(); renderOmr();
+  clearInterval(tick); tick = setInterval(updTimer, 500); updTimer();
+  window.scrollTo(0,0);
+}
+function elapsed(){ return Math.floor((Date.now()-started)/1000); }
+function updTimer(){
+  const left = LIMIT - elapsed();
+  $("#timer").textContent = fmt(left);
+  $("#timer").classList.toggle("warn", left < 180);
+}
+
+function askSubmit(){
+  const n = practice ? checked.filter(x=>!x).length : picks.filter(p=>p==null).length;
+  if(n===0) return submit();
+  $("#modalMsg").textContent = practice ? `아직 채점하지 않은 문항이 ${n}개 있어요. 지금 결과를 볼까요? (고른 답은 함께 채점돼요)` : `아직 풀지 않은 문항이 ${n}개 있어요. 그래도 제출할까요?`;
+  $("#modal").classList.remove("hide");
+}
+
+function submit(){
+  $("#modal").classList.add("hide");
+  submitted = true; clearInterval(tick);
+  const r = ROUNDS[cur], t = elapsed();
+  const per = {}; let correct = 0;
+  r.questions.forEach((q,i)=>{
+    per[q.unit] = per[q.unit] || {c:0,n:0}; per[q.unit].n++;
+    if(picks[i]===q.ans){ per[q.unit].c++; correct++; }
+  });
+  const score = correct*4;
+  const h = store.get("socexam-hist-"+r.round) || [];
+  const d = new Date(); h.push({score, time:t, date:`${d.getMonth()+1}/${d.getDate()}`});
+  store.set("socexam-hist-"+r.round, h.slice(-20));
+
+  $("#result").innerHTML = `
+    <div class="score"><span class="big">${score}점</span><span class="sub">${correct} / ${r.questions.length} 정답 · 풀이 시간 ${fmt(t)}${t>LIMIT?" (권장 시간 초과)":""}</span></div>
+    <div class="ubars">${Object.entries(per).map(([u,v])=>`
+      <div class="ubar"><span><span class="dot" style="background:${UNIT_COLOR[u]}"></span>${u}</span>
+      <div class="track"><div class="fill" style="width:${v.c/v.n*100}%;background:${UNIT_COLOR[u]}"></div></div>
+      <span>${v.c}/${v.n}</span></div>`).join("")}</div>
+    <div class="tools">
+      <label class="toggle"><input type="checkbox" id="onlyWrong"> 틀린 문항만 보기</label>
+      <button class="btn ghost" id="copyBtn">오답 번호 복사</button>
+      <button class="btn" id="retryBtn">다시 풀기</button>
+      <span id="copyMsg" class="sub" style="font-size:13px;color:var(--muted)"></span>
+    </div>
+    <p class="saved" id="saveMsg">오답노트에 저장하는 중…</p>`;
+  const rec = {round:r.round, mode:practice?"연습":"실전", score, correct, time:t, date:today(), at:new Date().toISOString(), wrong:wrongList(r)};
+  if(!practice){
+    saveWrongs(r, false).then(n=>{
+      const m = $("#saveMsg"); if(m) m.innerHTML = n ? `틀린 문항 ${n}개를 오답노트에 저장했어요. <a href="#notes">오답노트 보기 →</a>` : "모두 맞혔어요! 저장할 오답이 없어요.";
+      nbAttempt(rec);
+    });
+  } else { updUnsaved(); nbAttempt(rec); }
+  $("#result").classList.remove("hide");
+  $("#submitBtn").classList.add("hide");
+  $("#onlyWrong").onchange = e => { onlyWrong = e.target.checked; renderExam(); };
+  $("#retryBtn").onclick = () => start(practice);
+  $("#copyBtn").onclick = async () => {
+    const wrong = r.questions.map((q,i)=>picks[i]===q.ans?null:`${i+1}번(${q.topic})`).filter(Boolean);
+    const txt = `${r.title} ${score}점 / 오답: ${wrong.join(", ")||"없음"}`;
+    try{ await navigator.clipboard.writeText(txt); $("#copyMsg").textContent="복사했어요. 오답노트 만들 때 붙여 넣어 주세요."; }
+    catch(e){ $("#copyMsg").textContent = txt; }
+  };
+  renderExam(); renderOmr();
+  window.scrollTo(0,0);
+}
+
+function updUnsaved(){
+  const m = $("#saveMsg"); if(!m) return;
+  const r = ROUNDS[cur], w = wrongList(r), un = w.filter(n=>!savedRun.has(n-1));
+  if(!w.length){ m.innerHTML = "모두 맞혔어요!"; return; }
+  m.innerHTML = un.length
+    ? `오답노트에 저장한 문항 ${w.length-un.length}개 · 저장 안 한 오답 ${un.length}개 <button class="btn ghost" id="saveRest" style="padding:5px 10px;font-size:13px;margin-left:6px">남은 오답 모두 저장</button>`
+    : `틀린 문항 ${w.length}개가 모두 오답노트에 있어요. <a href="#notes">오답노트 보기 →</a>`;
+  const b = $("#saveRest");
+  if(b) b.onclick = async()=>{ b.disabled=true; b.textContent="저장 중…"; await saveWrongs(r, true); renderExam(); updUnsaved(); };
+}
+
+function reset(){
+  clearInterval(tick); submitted=false;
+  $("#intro").classList.remove("hide"); $("#result").classList.add("hide");
+  $("#exam").classList.add("hide"); $("#bar").classList.add("hide");
+  renderIntro();
+}
+
+$("#submitBtn").onclick = askSubmit;
+$("#mCancel").onclick = () => $("#modal").classList.add("hide");
+$("#mOk").onclick = submit;
+renderSel(); reset();
+setView(location.hash === "#notes" ? "notes" : "exam");
+nbInit();
+</script>
+<script>
+if ("serviceWorker" in navigator) { window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(()=>{})); }
+</script>
+</body>
+</html>
