@@ -98,6 +98,11 @@ details.exp summary{cursor:pointer;color:var(--accent);font-weight:500;font-size
 .dday.o{background:var(--ok);color:#fff}.dday.o b{color:#d9efe2}
 .dday.x{background:var(--bad);color:#fff}.dday.x b{color:#f6d6d2}
 .dday.now{outline:2px solid var(--accent);background:#fff}
+.dday{border:0;font-family:inherit;cursor:pointer}
+.dday.picked{box-shadow:0 0 0 2px var(--ink);transform:translateY(-1px)}
+.tnav{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.tnav input[type=date]{flex:1;min-width:130px;font:inherit;font-size:14px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+.btn.sm{padding:7px 10px;font-size:13px}
 .modebar{display:flex;align-items:center;gap:8px;margin:0 0 12px}
 .modebar .sp{flex:1}
 .modebar .btn{padding:7px 14px;font-size:13px}
@@ -219,13 +224,14 @@ body{word-break:keep-all;overflow-wrap:anywhere;-webkit-text-size-adjust:100%}
   .tools .toggle{flex-basis:100%}
 }
 @media (max-width:560px){.nmeta{margin-left:0}h1{font-size:22px}.qmeta{display:none}.score .big{font-size:36px}}
+.kicker .swap{color:var(--accent);font-weight:700;text-decoration:none;margin-left:2px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="top">
     <div>
-      <div class="kicker">교육청 시설관리 · 사회 25문항</div>
+      <div class="kicker">교육청 시설관리 · 사회 25문항 · <a href="history.html" class="swap">한국사 기출 ›</a></div>
       <h1>사회 실전 모의고사</h1>
     </div>
     <label>회차 <select id="roundSel"></select></label>
@@ -689,26 +695,53 @@ function dailyPick(dstr){
   return {ri, qi, r: ROUNDS[ri], q: ROUNDS[ri].questions[qi]};
 }
 function streak(){
-  let n = dayNum(today()); if(!DY.rec[dstrOf(n)]) n--;
-  let c = 0; while(DY.rec[dstrOf(n)]){ c++; n--; }
+  const has = ds => DY.rec[ds] && !DY.rec[ds].late;
+  let n = dayNum(today()); if(!has(dstrOf(n))) n--;
+  let c = 0; while(has(dstrOf(n))){ c++; n--; }
   return c;
 }
-let tPick = null, tSaved = false;
+// 날짜의 문제: 이미 푼 날은 그때 푼 문제 그대로, 아니면 날짜 기준 추첨
+function dailyFor(ds){
+  const rec = DY.rec[ds];
+  if(rec){ const ri = ROUNDS.findIndex(r=>r.round===rec.round), qi = rec.qno-1;
+    if(ri>=0 && ROUNDS[ri].questions[qi]) return {ri, qi, r: ROUNDS[ri], q: ROUNDS[ri].questions[qi]}; }
+  return dailyPick(ds);
+}
+let tPick = null, tSaved = false, tDate = null, tRetry = false, tRetryRes = null;
+function tGo(ds){
+  const t = today(); if(!ds || ds > t) ds = t;
+  tDate = ds === t ? null : ds; tPick = null; tRetry = false; tRetryRes = null; renderToday();
+}
 function renderToday(){
-  const d = today(), P = dailyPick(d), q = P.q, rec = DY.rec[d];
-  const done = !!rec, pick = done ? rec.pick : tPick, ok = done && rec.ok;
-  const dt = new Date(); const wd = "일월화수목금토"[dt.getDay()];
-  const days = []; const n0 = dayNum(d);
-  for(let k=13;k>=0;k--){ const ds = dstrOf(n0-k), r = DY.rec[ds]; days.push(`<span class="dday ${r?(r.ok?"o":"x"):(k===0?"now":"")}" title="${ds}"><b>${Number(ds.slice(8))}</b>${r?(r.ok?"O":"X"):"·"}</span>`); }
+  const td = today(), d = tDate || td, isToday = d === td;
+  const P = dailyFor(d), q = P.q, rec = DY.rec[d];
+  const solved = !!rec;
+  const done = (solved && !tRetry) || (tRetry && tRetryRes!=null);
+  const pick = tRetry ? (tRetryRes!=null ? tRetryRes : tPick) : (solved ? rec.pick : tPick);
+  const ok = done && pick === q.ans;
+  const n0 = dayNum(td), nd = dayNum(d);
+  const sel = new Date(nd*86400000); const wd = "일월화수목금토"[sel.getUTCDay()];
+  const days = [];
+  for(let k=13;k>=0;k--){ const ds = dstrOf(n0-k), r = DY.rec[ds];
+    days.push(`<button type="button" class="dday ${r?(r.ok?"o":"x"):""} ${(k===0&&!r)?"now":""} ${ds===d?"picked":""}" data-dd="${ds}" title="${ds}"><b>${Number(ds.slice(8))}</b>${r?(r.ok?"O":"X"):"·"}</button>`); }
   const all = Object.values(DY.rec), right = all.filter(x=>x.ok).length;
   const key = `r${P.r.round}-q${P.qi+1}`, inNote = !!NB.items[key];
+  let msg;
+  if(tRetry) msg = ok ? "정답이에요! (다시 풀기 결과는 기록되지 않아요)" : "아쉬워요. 해설을 다시 읽어 보세요. (기록되지 않아요)";
+  else msg = ok ? (isToday ? "정답이에요! 내일 또 만나요." : "정답이에요!") : "아쉬워요. 해설을 꼭 읽어 보세요.";
   $("#today").innerHTML = `
     <div class="card tcard">
       <div class="thead">
-        <div><div class="kicker">${dt.getMonth()+1}월 ${dt.getDate()}일 (${wd})</div><h2>오늘의 문제</h2></div>
+        <div><div class="kicker">${sel.getUTCMonth()+1}월 ${sel.getUTCDate()}일 (${wd})${isToday?"":" · 지난 문제"}</div><h2>${isToday?"오늘의 문제":"지난 날의 문제"}</h2></div>
         <div class="streak"><b>${streak()}</b>일 연속</div>
       </div>
       <div class="days">${days.join("")}</div>
+      <div class="tnav">
+        <button class="btn ghost sm" id="tPrev">‹ 전날</button>
+        <input type="date" id="tDateIn" value="${d}" max="${td}">
+        <button class="btn ghost sm" id="tNext" ${isToday?"disabled":""}>다음날 ›</button>
+        ${isToday?"":'<button class="btn sm" id="tToday">오늘로</button>'}
+      </div>
       <p class="nstats" style="margin:8px 0 0">지금까지 ${all.length}일 풀었어요 · 맞힘 ${right} · 틀림 ${all.length-right}</p>
     </div>
     <article class="q ${done?(ok?"correct done":"wrong done"):""}" style="margin-top:14px">
@@ -723,25 +756,35 @@ function renderToday(){
         if(done && pick===j && j!==q.ans) c="is-wrongpick";
         return `<li class="opt ${c}" data-tp="${j}"><span class="n">${CIRC[j]}</span><span>${esc(o)}</span></li>`;
       }).join("")}</ul>
-      ${!done?`<div class="nact"><button class="btn" id="tCheck" ${pick==null?"disabled":""}>제출하고 채점하기</button>${pick==null?'<span class="nstats">보기를 먼저 골라 주세요 · 하루 한 번만 채점돼요</span>':""}</div>`:`
-        <p class="saved" style="color:${ok?"var(--ok)":"var(--bad)"};font-weight:700">${ok?"정답이에요! 내일 또 만나요.":"아쉬워요. 해설을 꼭 읽어 보세요."}</p>
-        <div class="nact">${inNote?'<span class="saved" style="margin:0">✓ 오답노트에 있는 문제예요</span> <a href="#notes" style="font-size:13px">오답노트 보기</a>':`<button class="btn ghost" id="tSave">오답노트에 저장</button>`}</div>
+      ${!done?`<div class="nact"><button class="btn" id="tCheck" ${pick==null?"disabled":""}>제출하고 채점하기</button>${tRetry?'<button class="btn ghost" id="tCancel">취소</button>':""}${pick==null?`<span class="nstats">${tRetry?"다시 풀기 결과는 기록에 남지 않아요":isToday?"보기를 먼저 골라 주세요 · 하루 한 번만 채점돼요":"놓친 날 문제예요 · 풀면 기록에 남지만 연속 일수에는 포함되지 않아요"}</span>`:""}</div>`:`
+        <p class="saved" style="color:${ok?"var(--ok)":"var(--bad)"};font-weight:700">${msg}</p>
+        <div class="nact">${inNote?'<span class="saved" style="margin:0">✓ 오답노트에 있는 문제예요</span> <a href="#notes" style="font-size:13px">오답노트 보기</a>':`<button class="btn ghost" id="tSave">오답노트에 저장</button>`}
+          <button class="btn ghost" id="tRetryBtn">${tRetry?"한 번 더 풀기":"다시 풀어 보기"}</button></div>
         <details class="exp" open><summary>정답 ${CIRC[q.ans]} · 내 답 ${CIRC[pick]} — 선지별 해설</summary>
           <ol>${q.why.map((w,j)=>`<li class="${j===q.ans?"ans":""}"><span class="tag">${CIRC[j]}</span><span>${j===q.ans?"(O) ":"(X) "}${esc(w)}</span></li>`).join("")}</ol>
         </details>
-        <p class="notice" style="margin:12px 0 0">${P.r.title} ${P.qi+1}번 문제예요. 새 문제는 내일 자정에 바뀌어요.</p>`}
+        <p class="notice" style="margin:12px 0 0">${P.r.title} ${P.qi+1}번 문제예요.${solved?` 처음 푼 결과: ${rec.ok?"맞힘":"틀림"}(내 답 ${CIRC[rec.pick]})${rec.late?" · 늦게 푼 날":""}.`:""}${isToday?" 새 문제는 내일 자정에 바뀌어요.":""}</p>`}
     </article>`;
+  document.querySelectorAll("[data-dd]").forEach(el=>el.onclick=()=>tGo(el.dataset.dd));
+  $("#tPrev").onclick = ()=>tGo(dstrOf(nd-1));
+  const nx = $("#tNext"); if(nx) nx.onclick = ()=>tGo(dstrOf(nd+1));
+  const tt = $("#tToday"); if(tt) tt.onclick = ()=>tGo(td);
+  $("#tDateIn").onchange = e=>{ if(e.target.value) tGo(e.target.value); };
   if(!done){
     document.querySelectorAll("[data-tp]").forEach(el=>el.onclick=()=>{ const j=+el.dataset.tp; tPick = tPick===j?null:j; renderToday(); });
     const c = $("#tCheck");
     if(c) c.onclick = async()=>{
       if(tPick==null) return;
+      if(tRetry){ tRetryRes = tPick; tPick = null; renderToday(); return; }
       const rec = {date:d, round:P.r.round, qno:P.qi+1, unit:q.unit, topic:q.topic, pick:tPick, ok: tPick===q.ans, at:new Date().toISOString()};
+      if(!isToday) rec.late = true;
       tPick = null; await dyPut(d, rec);
     };
+    const cc = $("#tCancel"); if(cc) cc.onclick = ()=>{ tRetry=false; tRetryRes=null; tPick=null; renderToday(); };
   } else {
     const sv = $("#tSave");
     if(sv) sv.onclick = async()=>{ sv.disabled=true; sv.textContent="저장 중…"; await saveQ(P.r, P.qi, pick); renderToday(); };
+    $("#tRetryBtn").onclick = ()=>{ tRetry = true; tRetryRes = null; tPick = null; renderToday(); };
   }
 }
 
