@@ -240,6 +240,7 @@ body{word-break:keep-all;overflow-wrap:anywhere;-webkit-text-size-adjust:100%}
   <nav class="tabs">
     <button class="tab" data-v="today">오늘의 문제 <span class="cnt hide" id="tcnt">1</span></button>
     <button class="tab on" data-v="exam">모의고사</button>
+    <button class="tab" data-v="rand">랜덤 풀기</button>
     <button class="tab" data-v="notes">오답노트 <span class="cnt hide" id="ncnt"></span></button>
     <button class="tab hide" data-v="ox">OX 퀴즈</button>
     <button class="tab" data-v="bm">북마크 <span class="cnt bmc hide" id="bcnt"></span></button>
@@ -249,6 +250,7 @@ body{word-break:keep-all;overflow-wrap:anywhere;-webkit-text-size-adjust:100%}
   <section id="today" class="hide"></section>
   <section id="bm" class="hide"></section>
   <section id="ox" class="hide"></section>
+  <section id="rand" class="hide"></section>
   <section id="intro" class="card intro"></section>
   <section id="result" class="card result hide"></section>
   <section id="exam" class="hide"></section>
@@ -331,6 +333,7 @@ function nbChanged(){
   const c = $("#ncnt"); if(c){ c.textContent = open; c.classList.toggle("hide", !open); }
   if(view === "notes") renderNotes();
   if(view === "today") renderToday();
+  if(view === "rand") renderRand();
 }
 
 /* ───── 핵심정리 OX 퀴즈 (랜덤·슬라이드) ───── */
@@ -532,6 +535,7 @@ function bmChanged(){
   if(view === "today") renderToday();
   if(view === "notes") renderNotes();
   if(view === "bm") renderBM();
+  if(view === "rand") renderRand();
   if(view === "ox" && typeof renderOX === "function") renderOX();
 }
 let bIdx = 0, bUnit = "전체", bCover = true, bPicks = {};
@@ -792,6 +796,103 @@ function renderToday(){
   }
 }
 
+/* ───── 랜덤 문제 풀기 ───── */
+const RD = { st: store.get("histexam-rand") || {} };   // st[key] = {r, w, last}
+function rdSave(){ store.set("histexam-rand", RD.st); }
+let rd = null, rdUnit = "전체", rdExam = "전체", rdFresh = true;
+const rdKey = (ri, qi) => `r${ROUNDS[ri].round}-q${qi+1}`;
+function rdGroups(){ const g = []; ROUNDS.forEach(r=>{ if(r.exam && !g.includes(r.exam)) g.push(r.exam); }); return g; }
+function rdPool(){
+  const out = [];
+  ROUNDS.forEach((r,ri)=>{
+    if(rdExam!=="전체" && r.exam!==rdExam) return;
+    r.questions.forEach((q,qi)=>{ if(rdUnit==="전체" || q.unit===rdUnit) out.push([ri,qi]); });
+  });
+  return out;
+}
+function rdDraw(){
+  const pool = rdPool();
+  if(!pool.length){ rd = {ri:-1}; return; }
+  const sess = rd && rd.sess ? rd.sess : {seen:new Set(), right:0, wrong:0, n:0};
+  let cand = pool.filter(([ri,qi])=>!sess.seen.has(rdKey(ri,qi)));
+  if(!cand.length){ sess.seen.clear(); cand = pool.slice(); toast("고른 범위의 문제를 한 바퀴 다 풀었어요. 다시 섞어요!"); }
+  if(rdFresh){ const nr = cand.filter(([ri,qi])=>!((RD.st[rdKey(ri,qi)]||{}).r)); if(nr.length) cand = nr; }
+  const [ri,qi] = cand[Math.floor(Math.random()*cand.length)];
+  sess.seen.add(rdKey(ri,qi));
+  rd = {ri, qi, pick:null, checked:false, sess};
+}
+function rdReset(){ rd = null; rdDraw(); renderRand(); }
+function renderRand(){
+  if(!rd) rdDraw();
+  const pool = rdPool(), groups = rdGroups(), S = rd.sess || {right:0, wrong:0, n:0};
+  const everRight = pool.filter(([ri,qi])=>(RD.st[rdKey(ri,qi)]||{}).r).length;
+  const head = `
+    <div class="card" style="margin-bottom:14px">
+      <h2 style="margin:0 0 4px">🎲 랜덤 문제 풀기</h2>
+      <p class="nstats" style="margin:0 0 10px">전체 회차에서 한 문제씩 무작위로 나와요 · 고른 범위 ${pool.length}문항 중 맞혀 본 문제 ${everRight}개</p>
+      <div class="filters" style="margin-bottom:8px">${["전체",...UNITS].map(u=>`<button class="chip ${u===rdUnit?"on":""}" data-ru="${u}">${u}</button>`).join("")}</div>
+      ${groups.length>1?`<div class="filters" style="margin-bottom:8px">${["전체",...groups].map(g=>`<button class="chip ${g===rdExam?"on":""}" data-rg="${g}">${g==="전체"?"모든 시험":g}</button>`).join("")}</div>`:""}
+      <div class="filters"><button class="chip ${rdFresh?"on":""}" id="rdFresh">${rdFresh?"✓ ":""}아직 못 맞힌 문제 먼저</button></div>
+      <p class="nstats" style="margin:10px 0 0">이번에 푼 문제 <b>${S.n}</b> · 맞힘 ${S.right} · 틀림 ${S.wrong}${S.n?` · 정답률 ${Math.round(S.right/S.n*100)}%`:""}</p>
+    </div>`;
+  if(rd.ri < 0){ $("#rand").innerHTML = head + `<div class="card empty">고른 범위에 문제가 없어요.</div>`; rdBindHead(); return; }
+  const r = ROUNDS[rd.ri], q = r.questions[rd.qi];
+  const x = {...q, round:r.round, qno:rd.qi+1};
+  const key = rdKey(rd.ri, rd.qi), inNote = !!NB.items[key], hist = RD.st[key];
+  const ok = rd.checked && AOK(x,rd.pick);
+  $("#rand").innerHTML = head + `
+    <div class="slider"><div class="slide ${slideClass()}" id="rdSlide">
+    <article class="q ${rd.checked?(ok?"correct done":"wrong done"):""}">
+      <div class="qhead"><span class="qnum" style="min-width:auto">${RL(x.round)} ${x.qno}번</span>
+        <span class="qmeta" style="margin-left:auto"><span class="dot" style="background:${UNIT_COLOR[x.unit]}"></span>${x.unit} · ${esc(x.topic)}</span>${starBtn(x.round, x.qno)}</div>
+      ${hist?`<div class="nmeta"><span class="nstats">랜덤 기록: 맞힘 ${hist.r||0} · 틀림 ${hist.w||0}</span></div>`:""}
+      <p class="stem" style="margin-top:10px">${esc(x.stem)}</p>
+      ${QIMG(x)||(x.box?`<div class="box">${esc(x.box)}</div>`:"")}
+      <ul class="opts">${x.opts.map((o,j)=>{
+        let c="";
+        if(!rd.checked && rd.pick===j) c="sel";
+        if(rd.checked && AOK(x,j)) c="is-ans";
+        if(rd.checked && rd.pick===j && !AOK(x,j)) c="is-wrongpick";
+        return `<li class="opt ${c}" data-rp="${j}"><span class="n">${CIRC[j]}</span><span>${esc(o)}</span></li>`;
+      }).join("")}</ul>
+      ${!rd.checked?`<div class="nact"><button class="btn" id="rdCheck" ${rd.pick==null?"disabled":""}>제출하고 채점하기</button><button class="btn ghost" id="rdSkip">건너뛰기</button>${rd.pick==null?'<span class="nstats">보기를 먼저 골라 주세요</span>':""}</div>`:`
+        <p class="saved" style="color:${ok?"var(--ok)":"var(--bad)"};font-weight:700">${ok?"정답이에요!":"틀렸어요. 해설을 확인하세요."}</p>
+        <div class="nact">
+          <button class="btn" id="rdNext">다음 랜덤 문제 →</button>
+          ${inNote?'<span class="saved" style="margin:0">✓ 오답노트에 있는 문제예요</span>':`<button class="btn ghost" id="rdSave">오답노트에 저장</button>`}
+        </div>
+        <details class="exp" open><summary>정답 ${CIRC[x.ans]} · 내 답 ${CIRC[rd.pick]} — 선지별 해설</summary>
+          <ol>${x.why.map((w,j)=>`<li class="${AOK(x,j)?"ans":""}"><span class="tag">${CIRC[j]}</span><span>${AOK(x,j)?"(O) ":"(X) "}${esc(w)}</span></li>`).join("")}</ol>
+        </details>
+        ${sumBox(x)}
+        <p class="notice" style="margin:12px 0 0">${esc(r.title)} ${x.qno}번 문제예요.</p>`}
+    </article></div></div>
+    ${rd.checked?'<p class="swipehint">화면을 왼쪽으로 밀면 다음 문제로 넘어가요</p>':""}`;
+  rdBindHead();
+  const goNext = ()=>{ rdDraw(); slideDir = 1; renderRand(); window.scrollTo(0,0); };
+  if(!rd.checked){
+    document.querySelectorAll("[data-rp]").forEach(el=>el.onclick=()=>{ const j=+el.dataset.rp; rd.pick = rd.pick===j?null:j; renderRand(); });
+    $("#rdCheck").onclick = ()=>{
+      if(rd.pick==null) return;
+      rd.checked = true; const good = AOK(x,rd.pick);
+      rd.sess.n++; if(good) rd.sess.right++; else rd.sess.wrong++;
+      const h = RD.st[key] || {r:0, w:0}; if(good) h.r++; else h.w++; h.last = today(); RD.st[key] = h; rdSave();
+      renderRand();
+    };
+    $("#rdSkip").onclick = ()=>{ const el=$("#rdSlide"); el.classList.add("out-next"); setTimeout(goNext,170); };
+  } else {
+    $("#rdNext").onclick = ()=>{ const el=$("#rdSlide"); el.classList.add("out-next"); setTimeout(goNext,170); };
+    attachSwipe($("#rdSlide"), goNext, null);
+    const sv = $("#rdSave");
+    if(sv) sv.onclick = async()=>{ sv.disabled=true; sv.textContent="저장 중…"; await saveQ(r, rd.qi, rd.pick); toast("오답노트에 저장했어요"); renderRand(); };
+  }
+}
+function rdBindHead(){
+  document.querySelectorAll("[data-ru]").forEach(b=>b.onclick=()=>{ rdUnit=b.dataset.ru; const s = rd&&rd.sess; rd = s?{sess:s}:null; rdDraw(); renderRand(); });
+  document.querySelectorAll("[data-rg]").forEach(b=>b.onclick=()=>{ rdExam=b.dataset.rg; const s = rd&&rd.sess; rd = s?{sess:s}:null; rdDraw(); renderRand(); });
+  const f = $("#rdFresh"); if(f) f.onclick = ()=>{ rdFresh=!rdFresh; renderRand(); };
+}
+
 /* ───── 화면 전환 ───── */
 let view = "exam", nUnit = "전체", hideMastered = true, coverAns = false, revealed = new Set();
 function setView(v){
@@ -803,16 +904,18 @@ function setView(v){
   $("#today").classList.toggle("hide", v !== "today");
   $("#bm").classList.toggle("hide", v !== "bm");
   $("#ox").classList.toggle("hide", v !== "ox");
+  $("#rand").classList.toggle("hide", v !== "rand");
   ["#intro","#result","#exam","#bar"].forEach(s=>$(s).classList.toggle("hide-v", !ex));
   try{ history.replaceState(null, "", ex ? location.pathname + location.search : "#"+v); }catch(e){}
   if(v === "notes") renderNotes();
   if(v === "today") renderToday();
   if(v === "bm") renderBM();
   if(v === "ox") renderOX();
+  if(v === "rand") renderRand();
   window.scrollTo(0,0);
 }
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>setView(b.dataset.v));
-const hashView = () => location.hash==="#notes" ? "notes" : location.hash==="#today" ? "today" : location.hash==="#bm" ? "bm" : location.hash==="#ox" ? "ox" : "exam";
+const hashView = () => location.hash==="#notes" ? "notes" : location.hash==="#today" ? "today" : location.hash==="#bm" ? "bm" : location.hash==="#ox" ? "ox" : location.hash==="#rand" ? "rand" : "exam";
 window.addEventListener("hashchange", ()=>setView(hashView()));
 
 /* ───── 슬라이드(스와이프) ───── */
@@ -1267,16 +1370,19 @@ function renderIntro(){
       <li>시간이 지나도 계속 풀 수 있고, 초과 시간이 빨간색으로 표시돼요.</li>
       <li><b>실전 모드</b>: 다 풀고 제출하면 한꺼번에 채점해요.</li>
       <li><b>연습 모드</b>: 보기를 고르고 <b>제출하고 채점하기</b>를 누르면 그 문제의 정답과 해설이 바로 나와요. 틀린 문제는 <b>오답노트에 저장</b> 버튼으로 골라서 저장해요.</li>
+      <li><b>랜덤 문제 풀기</b>: 모든 회차에서 문제를 무작위로 한 문제씩 뽑아 바로 채점해요. 단원별로 골라 풀 수 있어요.</li>
       <li>오답노트에는 <b>오답노트에 저장</b> 버튼을 누른 문제만 저장돼요. (실전 모드는 제출 후 각 문제 아래에 버튼이 나와요)</li>
     </ul>
     <div class="tools" style="margin-top:0">
       <button class="btn" id="startBtn">실전 모드로 시작</button>
       <button class="btn ghost" id="practiceBtn">연습 모드 (바로 채점)</button>
+      <button class="btn ghost" id="randBtn">🎲 랜덤 문제 풀기 (전체 회차)</button>
     </div>
     ${h.length?`<div class="hist">이 브라우저에 남은 기록: ${h.slice(-5).map(x=>`<b>${x.score}점</b> (${x.date}, ${fmt(x.time)})`).join(" · ")}</div>`:""}
   `;
   $("#startBtn").onclick = () => start(false);
   $("#practiceBtn").onclick = () => start(true);
+  $("#randBtn").onclick = () => setView("rand");
 }
 
 let eIdx = 0;

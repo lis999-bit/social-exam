@@ -1,5 +1,5 @@
 // 버전을 올리면 새 회차가 앱에 반영됩니다.
-const CACHE = "soc-exam-v23";
+const CACHE = "soc-exam-v24";
 const CORE = ["./", "./index.html", "./history.html", "./soc_gichul.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE))); self.skipWaiting(); });
 self.addEventListener("activate", e => {
